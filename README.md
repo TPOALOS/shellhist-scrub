@@ -11,6 +11,9 @@ values with `***` in place. One file, standard library only.
 python3 shellhist_scrub.py                 # check ~/.zsh_history, ~/.bash_history (report only)
 python3 shellhist_scrub.py ~/.zsh_history  # a specific file
 python3 shellhist_scrub.py --scrub         # mask the values in place
+python3 shellhist_scrub.py --json          # machine-readable report (secret values stay masked)
+python3 shellhist_scrub.py --list-rules
+# or: pip install git+https://github.com/TPOALOS/shellhist-scrub && shellhist-scrub
 ```
 
 Report-only is the default and never modifies anything. Example output (values are
@@ -31,12 +34,14 @@ Before writing, a backup (`<file>.bak-<timestamp>`, permissions `600`) is create
 
 `curl -u user:pass`, `Authorization`/API-key headers, URLs with embedded credentials,
 `--password`/`--token`/`--secret` style flags, `mysql -pSECRET`, `sshpass -p`,
-`docker login -p`, `htpasswd -b`, `echo ... | sudo -S`, `export TOKEN=...`-style
-assignments, and well-known token formats (AWS keys, GitHub, Slack, JWT).
-Values that are variable references (`$TOKEN`, `$(pass show x)`) are ignored.
+`docker login -p`, `htpasswd -b`, `echo ... | sudo -S`, `zip -P` / `7z -p`, `redis-cli -a`, `ssh-keygen -N`,
+`openssl -passin/-passout pass:...`, `gpg --passphrase`, `export TOKEN=...`-style assignments, and well-known token
+formats (AWS, GitHub, GitLab, Slack, npm, PyPI, SendGrid, Stripe, Google, Anthropic/OpenAI-style keys, JWT).
+Values that are variable references or secret sources (`$TOKEN`, `$(pass show x)`, `openssl -pass env:KEY`, `file:`, `fd:`) are ignored.
 
-Handles zsh extended history (`: timestamp:duration;command`), multi-line commands and
-bash timestamp lines, and preserves non-UTF-8 bytes. Exit codes: `0` clean (or scrubbed),
+Handles zsh extended history (`: timestamp:duration;command`), **fish** history (`~/.local/share/fish/fish_history`),
+multi-line commands and bash timestamp lines, and preserves non-UTF-8 bytes. `--scrub` writes the new file next to the
+original and swaps it in atomically, so an interruption cannot leave a truncated history. Exit codes: `0` clean (or scrubbed),
 `1` findings, `2` error.
 
 ## Limits
